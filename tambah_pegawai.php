@@ -46,8 +46,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Jika email belum ada, masukkan data ke database
-    $query = "INSERT INTO pegawai (nama, nomor_hp, email, jabatan, status) 
-              VALUES ('$nama', '$nomor_hp', '$email', '$jabatan', '$status')";
+    $query = "INSERT INTO pegawai (nama, jenis_kelamin, alamat, nomor_hp, email, jabatan, status) 
+          VALUES ('$nama', '$jenis_kelamin', '$alamat', '$nomor_hp', '$email', '$jabatan', '$status')";
+
 
     if (mysqli_query($conn, $query)) {
         echo "<script>alert('Pegawai berhasil ditambahkan!'); window.location='pegawai.php';</script>";
