@@ -1,7 +1,6 @@
 <?php
 include 'config.php';
 
-
 // Proses tambah/edit gaji
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = $_POST['id'] ?? null;
@@ -31,6 +30,19 @@ if (isset($_GET['hapus'])) {
     exit();
 }
 
+// Proses ambil data untuk edit
+$id = $id_pegawai = $gaji_pokok = $tunjangan = $potongan = '';
+if (isset($_GET['edit'])) {
+    $id = $_GET['edit'];
+    $result = mysqli_query($conn, "SELECT * FROM gaji WHERE id='$id'");
+    if ($row = mysqli_fetch_assoc($result)) {
+        $id_pegawai = $row['id_pegawai'];
+        $gaji_pokok = $row['gaji_pokok'];
+        $tunjangan = $row['tunjangan'];
+        $potongan = $row['potongan'];
+    }
+}
+
 // Ambil data pegawai dan gaji
 $pegawai = mysqli_query($conn, "SELECT * FROM pegawai");
 $query = "SELECT g.id, p.nama, p.jabatan, p.status, g.gaji_pokok, g.tunjangan, g.potongan, 
@@ -39,12 +51,15 @@ $query = "SELECT g.id, p.nama, p.jabatan, p.status, g.gaji_pokok, g.tunjangan, g
           LEFT JOIN gaji g ON p.id = g.id_pegawai";
 $result = mysqli_query($conn, $query);
 ?>
+
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Data Gaji Pegawai</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
+
 <body>
     <div class="d-flex">
         <div class="sidebar bg-dark text-white p-3" style="width: 250px; height: 100vh;">
@@ -56,31 +71,49 @@ $result = mysqli_query($conn, $query);
                 <li class="nav-item"><a class="nav-link text-white" href="logout.php">Logout</a></li>
             </ul>
         </div>
+
         <div class="container mt-4">
             <h2 class="mb-4">Data Gaji Pegawai</h2>
-            
+
             <!-- Form Tambah/Edit Gaji -->
             <div class="card mb-4">
                 <div class="card-header">Tambah/Edit Gaji</div>
                 <div class="card-body">
                     <form method="POST" action="gaji.php">
-                        <input type="hidden" name="id" id="id">
+                        <input type="hidden" name="id" value="<?php echo $id; ?>">
                         <div class="mb-3">
                             <label>Pegawai</label>
-                            <select name="id_pegawai" class="form-control">
-                                <?php while ($p = mysqli_fetch_assoc($pegawai)) { ?>
-                                    <option value="<?php echo $p['id']; ?>"><?php echo $p['nama']; ?></option>
+                            <select name="id_pegawai" class="form-control" required>
+                                <?php
+                                mysqli_data_seek($pegawai, 0); // Reset hasil query
+                                while ($p = mysqli_fetch_assoc($pegawai)) { ?>
+                                    <option value="<?php echo $p['id']; ?>"
+                                        <?php echo ($p['id'] == $id_pegawai) ? 'selected' : ''; ?>>
+                                        <?php echo $p['nama']; ?>
+                                    </option>
                                 <?php } ?>
                             </select>
                         </div>
-                        <div class="mb-3"><label>Gaji Pokok</label><input type="number" name="gaji_pokok" class="form-control"></div>
-                        <div class="mb-3"><label>Tunjangan</label><input type="number" name="tunjangan" class="form-control"></div>
-                        <div class="mb-3"><label>Potongan</label><input type="number" name="potongan" class="form-control"></div>
-                        <button type="submit" class="btn btn-success">Simpan</button>
+                        <div class="mb-3">
+                            <label>Gaji Pokok</label>
+                            <input type="number" name="gaji_pokok" class="form-control" value="<?php echo $gaji_pokok; ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Tunjangan</label>
+                            <input type="number" name="tunjangan" class="form-control" value="<?php echo $tunjangan; ?>" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Potongan</label>
+                            <input type="number" name="potongan" class="form-control" value="<?php echo $potongan; ?>" required>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <?php echo ($id) ? 'Update' : 'Simpan'; ?>
+                        </button>
                     </form>
                 </div>
             </div>
-            
+
+            <!-- Tabel Data Gaji -->
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead class="table-dark">
@@ -98,26 +131,40 @@ $result = mysqli_query($conn, $query);
                     </thead>
                     <tbody>
                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                        <tr>
-                            <td><?php echo $row['id']; ?></td>
-                            <td><?php echo $row['nama']; ?></td>
-                            <td><?php echo $row['jabatan']; ?></td>
-                            <td><?php echo $row['status']; ?></td>
-                            <td>Rp <?php echo number_format($row['gaji_pokok'], 0, ',', '.'); ?></td>
-                            <td>Rp <?php echo number_format($row['tunjangan'], 0, ',', '.'); ?></td>
-                            <td>Rp <?php echo number_format($row['potongan'], 0, ',', '.'); ?></td>
-                            <td>Rp <?php echo number_format($row['gaji_bersih'], 0, ',', '.'); ?></td>
-                            <td>
-                                <a href="gaji.php?edit=<?php echo $row['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
-                                <a href="gaji.php?hapus=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus?');">Hapus</a>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td><?php echo $row['id']; ?></td>
+                                <td><?php echo $row['nama']; ?></td>
+                                <td><?php echo $row['jabatan']; ?></td>
+                                <td><?php echo $row['status']; ?></td>
+                                <td>Rp <?php echo number_format($row['gaji_pokok'], 0, ',', '.'); ?></td>
+                                <td>Rp <?php echo number_format($row['tunjangan'], 0, ',', '.'); ?></td>
+                                <td>Rp <?php echo number_format($row['potongan'], 0, ',', '.'); ?></td>
+                                <td>Rp <?php echo number_format($row['gaji_bersih'], 0, ',', '.'); ?></td>
+                                <td>
+                                    <a href="gaji.php?edit=<?php echo $row['id']; ?>" class="btn btn-warning btn-sm">Edit</a>
+                                    <a href="gaji.php?hapus=<?php echo $row['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus?');">Hapus</a>
+                                </td>
+                            </tr>
                         <?php } ?>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Scroll otomatis ke atas saat klik Edit
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('edit')) {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    </script>
 </body>
+
 </html>
